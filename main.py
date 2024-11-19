@@ -1,4 +1,3 @@
-# main.py
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,16 +6,15 @@ from typing import List
 from pydantic import BaseModel
 import numpy as np
 
-from database import SessionLocal, engine, Base
-import models
-from utils import extract_embedding, serialize_embedding, deserialize_embedding
+from database.database import SessionLocal, engine, Base
+from models import models
+from utils.utils import extract_embedding, serialize_embedding, deserialize_embedding
 
 # Создаём таблицы в базе данных
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Система Распознавания Лиц для Контроля Доступа")
 
-# Добавляем CORS Middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Разрешаем все источники (не рекомендуется для продакшена)
@@ -155,3 +153,18 @@ async def recognize_employee(file: UploadFile = File(...), db: Session = Depends
 async def get_employees(db: Session = Depends(get_db)):
     employees = db.query(models.Employee).all()
     return employees
+
+
+# Запуск приложения
+if __name__ == "__main__":
+    import uvicorn
+    import sys
+
+    try:
+        uvicorn.run("main:app", host="127.0.0.1", port=8001, reload=True)
+    except OSError as e:
+        if e.errno == 48:
+            print("Ошибка: Порт 8000 уже используется. Завершите процесс, занимающий этот порт, или используйте другой порт.")
+            sys.exit(1)
+        else:
+            raise e
